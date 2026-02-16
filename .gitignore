@@ -1,0 +1,27 @@
+# Session state directories (local storage, not to be committed)
+.copilot/
+session-state/
+
+# Backup files
+*.bak
+*.bak-*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
