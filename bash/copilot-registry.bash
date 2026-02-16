@@ -200,6 +200,7 @@ show_copilot_sessions() {
     echo "  cpr <name>      Resume bookmarked session"
     echo "  cpr <shortid>   Resume by short ID (min 8 chars)"
     echo "  cpb <name> <id> Bookmark current/specified session"
+    echo "  cprm <name>     Remove bookmarked session"
     echo "  cppush <name>   Push bookmarked session to cache"
     echo "  cppull <name>   Pull bookmarked session from cache"
     echo "  cpc             List cached sessions"
@@ -359,6 +360,76 @@ add_copilot_bookmark() {
     else
         echo -e "${COPILOT_YELLOW}Note: Bookmark is temporary (not saved to file)${COPILOT_NC}"
     fi
+}
+
+# Remove Copilot Bookmark (cprm)
+# Args: bookmark_name
+remove_copilot_bookmark() {
+    local name="$1"
+    
+    if [[ -z "$name" ]]; then
+        echo -e "${COPILOT_RED}Error: Please provide a bookmark name${COPILOT_NC}" >&2
+        echo "Usage: cprm <name>" >&2
+        return 1
+    fi
+    
+    # Check if bookmark exists
+    if [[ -z "${COPILOT_SESSIONS_ID[$name]}" ]]; then
+        echo -e "${COPILOT_RED}Error: Bookmark '$name' not found${COPILOT_NC}" >&2
+        return 1
+    fi
+    
+    local session_id="${COPILOT_SESSIONS_ID[$name]}"
+    local host="${COPILOT_SESSIONS_HOST[$name]}"
+    
+    # Remove from in-memory registry
+    unset COPILOT_SESSIONS_HOST["$name"]
+    unset COPILOT_SESSIONS_ID["$name"]
+    
+    echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Removed bookmark '${COPILOT_BOLD}$name${COPILOT_NC}' (${COPILOT_CYAN}${session_id:0:8}${COPILOT_NC}... on ${COPILOT_YELLOW}$host${COPILOT_NC})"
+    
+    # Create backup
+    local backup_file="${COPILOT_BOOKMARKS_FILE}.bak-$(date +%Y%m%d%H%M%S)"
+    cp "$COPILOT_BOOKMARKS_FILE" "$backup_file" 2>/dev/null
+    
+    # Rebuild bookmarks file
+    {
+        echo '#!/usr/bin/env bash'
+        echo '# Copilot Session Bookmarks'
+        echo '# This file stores bookmarked Copilot sessions with hostname tracking'
+        echo '# Format: Two parallel associative arrays (bash doesn'"'"'t support nested arrays)'
+        echo '#   COPILOT_SESSIONS_HOST[name]="hostname"'
+        echo '#   COPILOT_SESSIONS_ID[name]="session-id"'
+        echo ''
+        echo '# Require Bash 4+ for associative arrays'
+        echo 'if ((BASH_VERSINFO[0] < 4)); then'
+        echo '    echo "Error: Bash 4.0 or higher required for Copilot session management" >&2'
+        echo '    return 1 2>/dev/null || exit 1'
+        echo 'fi'
+        echo ''
+        echo '# Initialize associative arrays'
+        echo 'declare -gA COPILOT_SESSIONS_HOST'
+        echo 'declare -gA COPILOT_SESSIONS_ID'
+        echo ''
+        echo '# Bookmark data (synced across machines via OneDrive)'
+        echo 'COPILOT_SESSIONS_HOST=('
+        
+        for key in "${!COPILOT_SESSIONS_HOST[@]}"; do
+            echo "    [$key]=\"${COPILOT_SESSIONS_HOST[$key]}\""
+        done
+        
+        echo ')'
+        echo ''
+        echo 'COPILOT_SESSIONS_ID=('
+        
+        for key in "${!COPILOT_SESSIONS_ID[@]}"; do
+            echo "    [$key]=\"${COPILOT_SESSIONS_ID[$key]}\""
+        done
+        
+        echo ')'
+    } > "$COPILOT_BOOKMARKS_FILE"
+    
+    echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Saved to config file (backup: $(basename "$backup_file"))"
 }
 
 # ============================================================================

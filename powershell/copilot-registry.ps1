@@ -154,6 +154,8 @@ function Show-CopilotSessions {
     Write-Host "- Bookmark session (saves to config)" -ForegroundColor Gray
     Write-Host "  cpb <name> <id> -NoPersist " -NoNewline -ForegroundColor White
     Write-Host "- Bookmark temporarily" -ForegroundColor Gray
+    Write-Host "  cprm <bookmark>    " -NoNewline -ForegroundColor White
+    Write-Host "- Remove bookmark from config" -ForegroundColor Gray
     Write-Host "  cppush <bookmark>  " -NoNewline -ForegroundColor White
     Write-Host "- Push session to OneDrive cache" -ForegroundColor Gray
     Write-Host "  cppull <bookmark>  " -NoNewline -ForegroundColor White
@@ -314,6 +316,78 @@ $($hashtableLines -join "`n")
         }
     } else {
         Write-Host "  Bookmark added to current session only (temporary)" -ForegroundColor DarkGray
+    }
+}
+
+# Remove a bookmark from the registry
+function Remove-CopilotBookmark {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [string]$Name
+    )
+    
+    # Check if bookmark exists
+    if (-not $Global:CopilotSessions.ContainsKey($Name)) {
+        Write-Host "Error: Bookmark '$Name' not found" -ForegroundColor Red
+        return
+    }
+    
+    $bookmark = $Global:CopilotSessions[$Name]
+    $sessionId = $bookmark.Id
+    $host = $bookmark.Host
+    
+    # Remove from in-memory registry
+    $Global:CopilotSessions.Remove($Name)
+    
+    $shortId = $sessionId.Substring(0, 8)
+    Write-Host "✓" -ForegroundColor Green -NoNewline
+    Write-Host " Removed bookmark '" -NoNewline
+    Write-Host $Name -ForegroundColor White -NoNewline
+    Write-Host "' (" -NoNewline
+    Write-Host "$shortId..." -ForegroundColor Cyan -NoNewline
+    Write-Host " on " -NoNewline
+    Write-Host $host -ForegroundColor Yellow -NoNewline
+    Write-Host ")"
+    
+    # Save to file
+    $CopilotBookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
+    
+    if (Test-Path $CopilotBookmarksPath) {
+        try {
+            # Create backup
+            $backupPath = "$CopilotBookmarksPath.bak-$(Get-Date -Format 'yyyyMMddHHmmss')"
+            Copy-Item $CopilotBookmarksPath $backupPath -Force
+            
+            # Rebuild the bookmarks file
+            $content = @"
+# Copilot Session Bookmarks
+# This file stores bookmarked Copilot sessions with hostname tracking
+# Format: 'name' = @{ Host = 'hostname'; Id = 'session-id' }
+
+`$Global:CopilotSessions = @{
+"@
+            
+            foreach ($key in $Global:CopilotSessions.Keys | Sort-Object) {
+                $bm = $Global:CopilotSessions[$key]
+                $content += @"
+
+    '$key' = @{
+        Host = '$($bm.Host)'
+        Id = '$($bm.Id)'
+    }
+"@
+            }
+            
+            $content += "`n}"
+            
+            $content | Out-File -FilePath $CopilotBookmarksPath -Encoding UTF8 -Force
+            
+            $backupName = Split-Path $backupPath -Leaf
+            Write-Host "✓ Saved to config file (backup: $backupName)" -ForegroundColor Green
+        } catch {
+            Write-Host "⚠ Failed to save: $($_.Exception.Message)" -ForegroundColor Red
+        }
     }
 }
 

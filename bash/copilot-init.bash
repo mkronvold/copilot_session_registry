@@ -23,6 +23,7 @@ fi
 alias cpl='show_copilot_sessions'
 alias cpr='resume_copilot_session'
 alias cpb='add_copilot_bookmark'
+alias cprm='remove_copilot_bookmark'
 alias cppush='push_copilot_session'
 alias cppull='get_copilot_session'
 alias cpc='show_copilot_cache'
