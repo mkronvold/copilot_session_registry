@@ -2,6 +2,10 @@
 # GitHub Copilot CLI Session Management Functions
 # Bash implementation with full feature parity to PowerShell version
 
+# Prevent re-sourcing (avoid readonly variable errors)
+[[ -n "${COPILOT_REGISTRY_LOADED}" ]] && return 0
+readonly COPILOT_REGISTRY_LOADED=1
+
 # ANSI color codes
 readonly CYAN='\033[0;36m'
 readonly GREEN='\033[0;32m'
