@@ -747,3 +747,15 @@ function Show-CopilotCache {
     Write-Host "  cppush <bookmark>  " -NoNewline -ForegroundColor White
     Write-Host "- Push session to cache" -ForegroundColor Gray
 }
+
+# ============================================================================
+# ALIASES
+# ============================================================================
+
+Set-Alias -Name cpl -Value Show-CopilotSessions
+Set-Alias -Name cpr -Value Resume-CopilotSession
+Set-Alias -Name cpb -Value Add-CopilotBookmark
+Set-Alias -Name cprm -Value Remove-CopilotBookmark
+Set-Alias -Name cppush -Value Push-CopilotSession
+Set-Alias -Name cppull -Value Get-CopilotSession
+Set-Alias -Name cpc -Value Show-CopilotCache
