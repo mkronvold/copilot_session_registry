@@ -6,19 +6,19 @@
 [[ -n "${COPILOT_REGISTRY_LOADED}" ]] && return 0
 readonly COPILOT_REGISTRY_LOADED=1
 
-# ANSI color codes
-readonly CYAN='\033[0;36m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[0;33m'
-readonly RED='\033[0;31m'
-readonly GRAY='\033[0;90m'
-readonly BOLD='\033[1m'
-readonly NC='\033[0m'
+# ANSI color codes (prefixed with COPILOT_ to avoid conflicts)
+readonly COPILOT_CYAN='\033[0;36m'
+readonly COPILOT_GREEN='\033[0;32m'
+readonly COPILOT_YELLOW='\033[0;33m'
+readonly COPILOT_RED='\033[0;31m'
+readonly COPILOT_GRAY='\033[0;90m'
+readonly COPILOT_BOLD='\033[1m'
+readonly COPILOT_NC='\033[0m'
 
 # Paths
-readonly SESSION_STATE_DIR="$HOME/.copilot/session-state"
-readonly CACHE_DIR="/mnt/c/Users/mike/OneDrive/.copilot-cache"
-readonly BOOKMARKS_FILE="/mnt/c/Users/mike/OneDrive/scripts/copilot-bookmarks.bash"
+readonly COPILOT_SESSION_STATE_DIR="$HOME/.copilot/session-state"
+readonly COPILOT_CACHE_DIR="/mnt/c/Users/mike/OneDrive/.copilot-cache"
+readonly COPILOT_BOOKMARKS_FILE="/mnt/c/Users/mike/OneDrive/scripts/copilot-bookmarks.bash"
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -34,7 +34,7 @@ get_short_hostname() {
 # Returns: 0 if exists, 1 if not
 test_session_exists() {
     local session_id="$1"
-    [[ -d "$SESSION_STATE_DIR/$session_id" ]]
+    [[ -d "$COPILOT_SESSION_STATE_DIR/$session_id" ]]
 }
 
 # Get bookmark info
@@ -72,14 +72,14 @@ expand_session_id() {
     fi
     
     local matches=()
-    if [[ -d "$SESSION_STATE_DIR" ]]; then
+    if [[ -d "$COPILOT_SESSION_STATE_DIR" ]]; then
         while IFS= read -r dir; do
             local session_id
             session_id=$(basename "$dir")
             if [[ "$session_id" == "$short_id"* ]]; then
                 matches+=("$session_id")
             fi
-        done < <(find "$SESSION_STATE_DIR" -mindepth 1 -maxdepth 1 -type d)
+        done < <(find "$COPILOT_SESSION_STATE_DIR" -mindepth 1 -maxdepth 1 -type d)
     fi
     
     if [[ ${#matches[@]} -eq 0 ]]; then
@@ -109,12 +109,12 @@ validate_session_id() {
 # Show Copilot Sessions (cpl)
 # Lists bookmarked and recent sessions with metadata
 show_copilot_sessions() {
-    echo -e "${BOLD}${CYAN}GitHub Copilot Sessions${NC}"
+    echo -e "${COPILOT_BOLD}${COPILOT_CYAN}GitHub Copilot Sessions${COPILOT_NC}"
     echo ""
     
     # Show bookmarked sessions
     if [[ ${#COPILOT_SESSIONS_ID[@]} -gt 0 ]]; then
-        echo -e "${BOLD}Bookmarked Sessions:${NC}"
+        echo -e "${COPILOT_BOLD}Bookmarked Sessions:${COPILOT_NC}"
         
         local current_host
         current_host=$(get_short_hostname)
@@ -128,40 +128,40 @@ show_copilot_sessions() {
             
             if [[ "$host" == "$current_host" ]]; then
                 if test_session_exists "$id"; then
-                    location="${GREEN}[local]${NC}"
-                    status="${GREEN}✓${NC}"
+                    location="${COPILOT_GREEN}[local]${COPILOT_NC}"
+                    status="${COPILOT_GREEN}✓${COPILOT_NC}"
                 else
-                    location="${YELLOW}[local-missing]${NC}"
-                    status="${RED}✗${NC}"
+                    location="${COPILOT_YELLOW}[local-missing]${COPILOT_NC}"
+                    status="${COPILOT_RED}✗${COPILOT_NC}"
                 fi
             else
-                location="${GRAY}[remote:$host]${NC}"
+                location="${COPILOT_GRAY}[remote:$host]${COPILOT_NC}"
                 if test_session_exists "$id"; then
-                    status="${GREEN}✓${NC}"
+                    status="${COPILOT_GREEN}✓${COPILOT_NC}"
                 else
-                    status="${GRAY}✗${NC}"
+                    status="${COPILOT_GRAY}✗${COPILOT_NC}"
                 fi
             fi
             
             # Get plan description if available
             local plan_desc=""
             if test_session_exists "$id"; then
-                local plan_file="$SESSION_STATE_DIR/$id/plan.md"
+                local plan_file="$COPILOT_SESSION_STATE_DIR/$id/plan.md"
                 if [[ -f "$plan_file" ]]; then
                     plan_desc=$(head -1 "$plan_file" | sed 's/^# *//')
                 fi
             fi
             
-            echo -e "  ${status} ${BOLD}${name}${NC} $location"
-            echo -e "     ID: ${CYAN}$short_id${NC}... ($id)"
-            [[ -n "$plan_desc" ]] && echo -e "     ${GRAY}$plan_desc${NC}"
+            echo -e "  ${status} ${COPILOT_BOLD}${name}${COPILOT_NC} $location"
+            echo -e "     ID: ${COPILOT_CYAN}$short_id${COPILOT_NC}... ($id)"
+            [[ -n "$plan_desc" ]] && echo -e "     ${COPILOT_GRAY}$plan_desc${COPILOT_NC}"
         done
         echo ""
     fi
     
     # Show recent sessions
-    if [[ -d "$SESSION_STATE_DIR" ]]; then
-        echo -e "${BOLD}Recent Sessions:${NC}"
+    if [[ -d "$COPILOT_SESSION_STATE_DIR" ]]; then
+        echo -e "${COPILOT_BOLD}Recent Sessions:${COPILOT_NC}"
         
         local count=0
         while IFS= read -r dir; do
@@ -186,17 +186,17 @@ show_copilot_sessions() {
                     plan_desc=$(head -1 "$plan_file" | sed 's/^# *//')
                 fi
                 
-                echo -e "  ${BOLD}$short_id${NC}... ($session_id)"
-                [[ -n "$plan_desc" ]] && echo -e "     ${GRAY}$plan_desc${NC}"
+                echo -e "  ${COPILOT_BOLD}$short_id${COPILOT_NC}... ($session_id)"
+                [[ -n "$plan_desc" ]] && echo -e "     ${COPILOT_GRAY}$plan_desc${COPILOT_NC}"
                 
                 ((count++))
                 [[ $count -ge 5 ]] && break
             fi
-        done < <(find "$SESSION_STATE_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -rn | cut -d' ' -f2-)
+        done < <(find "$COPILOT_SESSION_STATE_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -rn | cut -d' ' -f2-)
     fi
     
     echo ""
-    echo -e "${BOLD}Usage:${NC}"
+    echo -e "${COPILOT_BOLD}Usage:${COPILOT_NC}"
     echo "  cpr <name>      Resume bookmarked session"
     echo "  cpr <shortid>   Resume by short ID (min 8 chars)"
     echo "  cpb <name> <id> Bookmark current/specified session"
@@ -211,7 +211,7 @@ resume_copilot_session() {
     local input="$1"
     
     if [[ -z "$input" ]]; then
-        echo -e "${RED}Error: Please provide a bookmark name or session ID${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Please provide a bookmark name or session ID${COPILOT_NC}" >&2
         echo "Usage: cpr <name|shortid>" >&2
         return 1
     fi
@@ -228,13 +228,13 @@ resume_copilot_session() {
         # Validate session exists
         if ! test_session_exists "$session_id"; then
             if [[ "$host" == "$current_host" ]]; then
-                echo -e "${RED}Error: Session '$input' not found locally${NC}" >&2
-                echo -e "${YELLOW}The session was bookmarked on this machine but the files are missing.${NC}" >&2
-                echo -e "${YELLOW}Try: cppull $input${NC}" >&2
+                echo -e "${COPILOT_RED}Error: Session '$input' not found locally${COPILOT_NC}" >&2
+                echo -e "${COPILOT_YELLOW}The session was bookmarked on this machine but the files are missing.${COPILOT_NC}" >&2
+                echo -e "${COPILOT_YELLOW}Try: cppull $input${COPILOT_NC}" >&2
             else
-                echo -e "${RED}Error: Session '$input' is not available on this machine${NC}" >&2
-                echo -e "${YELLOW}This session was bookmarked on '$host'${NC}" >&2
-                echo -e "${YELLOW}To use it here, run: cppull $input${NC}" >&2
+                echo -e "${COPILOT_RED}Error: Session '$input' is not available on this machine${COPILOT_NC}" >&2
+                echo -e "${COPILOT_YELLOW}This session was bookmarked on '$host'${COPILOT_NC}" >&2
+                echo -e "${COPILOT_YELLOW}To use it here, run: cppull $input${COPILOT_NC}" >&2
             fi
             return 1
         fi
@@ -246,7 +246,7 @@ resume_copilot_session() {
     fi
     
     # Resume session
-    echo -e "${GREEN}Resuming session: ${CYAN}$session_id${NC}"
+    echo -e "${COPILOT_GREEN}Resuming session: ${COPILOT_CYAN}$session_id${COPILOT_NC}"
     copilot --resume "$session_id"
 }
 
@@ -266,14 +266,14 @@ add_copilot_bookmark() {
                 shift
                 ;;
             *)
-                echo -e "${RED}Error: Unknown flag '$1'${NC}" >&2
+                echo -e "${COPILOT_RED}Error: Unknown flag '$1'${COPILOT_NC}" >&2
                 return 1
                 ;;
         esac
     done
     
     if [[ -z "$name" ]]; then
-        echo -e "${RED}Error: Please provide a bookmark name${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Please provide a bookmark name${COPILOT_NC}" >&2
         echo "Usage: cpb <name> [session_id] [--no-persist]" >&2
         return 1
     fi
@@ -284,7 +284,7 @@ add_copilot_bookmark() {
         if [[ -f "$current_session_file" ]]; then
             session_id=$(cat "$current_session_file")
         else
-            echo -e "${RED}Error: No current session and no session ID provided${NC}" >&2
+            echo -e "${COPILOT_RED}Error: No current session and no session ID provided${COPILOT_NC}" >&2
             echo "Usage: cpb <name> <session_id>" >&2
             return 1
         fi
@@ -299,7 +299,7 @@ add_copilot_bookmark() {
     
     # Validate session exists
     if ! test_session_exists "$session_id"; then
-        echo -e "${RED}Error: Session '$session_id' not found${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Session '$session_id' not found${COPILOT_NC}" >&2
         return 1
     fi
     
@@ -310,13 +310,13 @@ add_copilot_bookmark() {
     COPILOT_SESSIONS_HOST["$name"]="$current_host"
     COPILOT_SESSIONS_ID["$name"]="$session_id"
     
-    echo -e "${GREEN}✓${NC} Bookmarked '${BOLD}$name${NC}' → ${CYAN}${session_id:0:8}${NC}... on ${YELLOW}$current_host${NC}"
+    echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Bookmarked '${COPILOT_BOLD}$name${COPILOT_NC}' → ${COPILOT_CYAN}${session_id:0:8}${COPILOT_NC}... on ${COPILOT_YELLOW}$current_host${COPILOT_NC}"
     
     # Persist to file if requested
     if [[ "$persist" == "true" ]]; then
         # Create backup
-        local backup_file="${BOOKMARKS_FILE}.bak-$(date +%Y%m%d%H%M%S)"
-        cp "$BOOKMARKS_FILE" "$backup_file" 2>/dev/null
+        local backup_file="${COPILOT_BOOKMARKS_FILE}.bak-$(date +%Y%m%d%H%M%S)"
+        cp "$COPILOT_BOOKMARKS_FILE" "$backup_file" 2>/dev/null
         
         # Rebuild bookmarks file
         {
@@ -353,11 +353,11 @@ add_copilot_bookmark() {
             done
             
             echo ')'
-        } > "$BOOKMARKS_FILE"
+        } > "$COPILOT_BOOKMARKS_FILE"
         
-        echo -e "${GREEN}✓${NC} Saved to config file (backup: $(basename "$backup_file"))"
+        echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Saved to config file (backup: $(basename "$backup_file"))"
     else
-        echo -e "${YELLOW}Note: Bookmark is temporary (not saved to file)${NC}"
+        echo -e "${COPILOT_YELLOW}Note: Bookmark is temporary (not saved to file)${COPILOT_NC}"
     fi
 }
 
@@ -379,37 +379,37 @@ push_copilot_session() {
                 shift
                 ;;
             *)
-                echo -e "${RED}Error: Unknown flag '$1'${NC}" >&2
+                echo -e "${COPILOT_RED}Error: Unknown flag '$1'${COPILOT_NC}" >&2
                 return 1
                 ;;
         esac
     done
     
     if [[ -z "$name" ]]; then
-        echo -e "${RED}Error: Please provide a bookmark name${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Please provide a bookmark name${COPILOT_NC}" >&2
         echo "Usage: cppush <name> [--force]" >&2
         return 1
     fi
     
     # Get bookmark info
     if [[ -z "${COPILOT_SESSIONS_ID[$name]}" ]]; then
-        echo -e "${RED}Error: Bookmark '$name' not found${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Bookmark '$name' not found${COPILOT_NC}" >&2
         return 1
     fi
     
     local session_id="${COPILOT_SESSIONS_ID[$name]}"
-    local session_dir="$SESSION_STATE_DIR/$session_id"
+    local session_dir="$COPILOT_SESSION_STATE_DIR/$session_id"
     
     if ! test_session_exists "$session_id"; then
-        echo -e "${RED}Error: Session directory not found: $session_id${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Session directory not found: $session_id${COPILOT_NC}" >&2
         return 1
     fi
     
-    local cache_path="$CACHE_DIR/$name"
+    local cache_path="$COPILOT_CACHE_DIR/$name"
     
     # Check if cache already exists
     if [[ -d "$cache_path" ]] && [[ "$force" != "true" ]]; then
-        echo -e "${YELLOW}Cache for '$name' already exists${NC}"
+        echo -e "${COPILOT_YELLOW}Cache for '$name' already exists${COPILOT_NC}"
         read -p "Overwrite? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -425,7 +425,7 @@ push_copilot_session() {
     local file_count
     file_count=$(find "$session_dir" -type f | wc -l)
     
-    echo -e "${CYAN}Pushing session '$name' to cache...${NC}"
+    echo -e "${COPILOT_CYAN}Pushing session '$name' to cache...${COPILOT_NC}"
     echo "  Session ID: ${session_id:0:8}..."
     echo "  Size: ${size_mb} MB ($file_count files)"
     
@@ -455,7 +455,7 @@ push_copilot_session() {
 }
 EOF
     
-    echo -e "${GREEN}✓${NC} Session pushed to cache successfully"
+    echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Session pushed to cache successfully"
     echo "  Cache location: $cache_path"
 }
 
@@ -473,40 +473,40 @@ get_copilot_session() {
                 shift
                 ;;
             *)
-                echo -e "${RED}Error: Unknown flag '$1'${NC}" >&2
+                echo -e "${COPILOT_RED}Error: Unknown flag '$1'${COPILOT_NC}" >&2
                 return 1
                 ;;
         esac
     done
     
     if [[ -z "$name" ]]; then
-        echo -e "${RED}Error: Please provide a bookmark name${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Please provide a bookmark name${COPILOT_NC}" >&2
         echo "Usage: cppull <name> [--force]" >&2
         return 1
     fi
     
-    local cache_path="$CACHE_DIR/$name"
+    local cache_path="$COPILOT_CACHE_DIR/$name"
     
     if [[ ! -d "$cache_path" ]]; then
-        echo -e "${RED}Error: No cached session found for '$name'${NC}" >&2
-        echo "Available caches: $(ls "$CACHE_DIR" 2>/dev/null | tr '\n' ' ')" >&2
+        echo -e "${COPILOT_RED}Error: No cached session found for '$name'${COPILOT_NC}" >&2
+        echo "Available caches: $(ls "$COPILOT_CACHE_DIR" 2>/dev/null | tr '\n' ' ')" >&2
         return 1
     fi
     
     # Read session ID from cache
     local session_id_file="$cache_path/session-id.txt"
     if [[ ! -f "$session_id_file" ]]; then
-        echo -e "${RED}Error: Cache is missing session-id.txt${NC}" >&2
+        echo -e "${COPILOT_RED}Error: Cache is missing session-id.txt${COPILOT_NC}" >&2
         return 1
     fi
     
     local session_id
     session_id=$(cat "$session_id_file")
-    local session_dir="$SESSION_STATE_DIR/$session_id"
+    local session_dir="$COPILOT_SESSION_STATE_DIR/$session_id"
     
     # Check if session already exists locally
     if [[ -d "$session_dir" ]] && [[ "$force" != "true" ]]; then
-        echo -e "${YELLOW}Session already exists locally${NC}"
+        echo -e "${COPILOT_YELLOW}Session already exists locally${COPILOT_NC}"
         read -p "Overwrite? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -517,7 +517,7 @@ get_copilot_session() {
     
     # Show metadata if available
     if [[ -f "$cache_path/metadata.json" ]]; then
-        echo -e "${CYAN}Cache metadata:${NC}"
+        echo -e "${COPILOT_CYAN}Cache metadata:${COPILOT_NC}"
         if command -v jq &>/dev/null; then
             jq . "$cache_path/metadata.json"
         else
@@ -526,7 +526,7 @@ get_copilot_session() {
         echo ""
     fi
     
-    echo -e "${CYAN}Pulling session '$name' from cache...${NC}"
+    echo -e "${COPILOT_CYAN}Pulling session '$name' from cache...${COPILOT_NC}"
     echo "  Session ID: ${session_id:0:8}..."
     
     # Create session directory
@@ -542,8 +542,8 @@ get_copilot_session() {
     COPILOT_SESSIONS_ID["$name"]="$session_id"
     
     # Save updated bookmark
-    local backup_file="${BOOKMARKS_FILE}.bak-$(date +%Y%m%d%H%M%S)"
-    cp "$BOOKMARKS_FILE" "$backup_file" 2>/dev/null
+    local backup_file="${COPILOT_BOOKMARKS_FILE}.bak-$(date +%Y%m%d%H%M%S)"
+    cp "$COPILOT_BOOKMARKS_FILE" "$backup_file" 2>/dev/null
     
     {
         echo '#!/usr/bin/env bash'
@@ -579,10 +579,10 @@ get_copilot_session() {
         done
         
         echo ')'
-    } > "$BOOKMARKS_FILE"
+    } > "$COPILOT_BOOKMARKS_FILE"
     
-    echo -e "${GREEN}✓${NC} Session pulled from cache successfully"
-    echo -e "${GREEN}✓${NC} Updated bookmark to current host ($current_host)"
+    echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Session pulled from cache successfully"
+    echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Updated bookmark to current host ($current_host)"
     echo "  Session directory: $session_dir"
 }
 
@@ -598,7 +598,7 @@ show_copilot_cache() {
         case "$1" in
             --clear)
                 if [[ -z "$2" ]]; then
-                    echo -e "${RED}Error: --clear requires a session name${NC}" >&2
+                    echo -e "${COPILOT_RED}Error: --clear requires a session name${COPILOT_NC}" >&2
                     return 1
                 fi
                 clear_name="$2"
@@ -609,7 +609,7 @@ show_copilot_cache() {
                 shift
                 ;;
             *)
-                echo -e "${RED}Error: Unknown option '$1'${NC}" >&2
+                echo -e "${COPILOT_RED}Error: Unknown option '$1'${COPILOT_NC}" >&2
                 echo "Usage: cpc [--clear <name>] [--clear-all]" >&2
                 return 1
                 ;;
@@ -618,14 +618,14 @@ show_copilot_cache() {
     
     # Handle --clear <name>
     if [[ -n "$clear_name" ]]; then
-        local cache_path="$CACHE_DIR/$clear_name"
+        local cache_path="$COPILOT_CACHE_DIR/$clear_name"
         
         if [[ ! -d "$cache_path" ]]; then
-            echo -e "${RED}Error: Cache '$clear_name' not found${NC}" >&2
+            echo -e "${COPILOT_RED}Error: Cache '$clear_name' not found${COPILOT_NC}" >&2
             return 1
         fi
         
-        echo -e "${YELLOW}Remove cache '$clear_name'?${NC}"
+        echo -e "${COPILOT_YELLOW}Remove cache '$clear_name'?${COPILOT_NC}"
         read -p "This will delete all cached files. Continue? (y/N): " -n 1 -r
         echo
         
@@ -635,21 +635,21 @@ show_copilot_cache() {
         fi
         
         rm -rf "$cache_path"
-        echo -e "${GREEN}✓${NC} Cleared cache: $clear_name"
+        echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Cleared cache: $clear_name"
         return 0
     fi
     
     # Handle --clear-all
     if [[ "$clear_all" == "true" ]]; then
-        if [[ ! -d "$CACHE_DIR" ]] || [[ -z "$(ls -A "$CACHE_DIR" 2>/dev/null)" ]]; then
+        if [[ ! -d "$COPILOT_CACHE_DIR" ]] || [[ -z "$(ls -A "$COPILOT_CACHE_DIR" 2>/dev/null)" ]]; then
             echo "No cached sessions to clear"
             return 0
         fi
         
         local count
-        count=$(find "$CACHE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
+        count=$(find "$COPILOT_CACHE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)
         
-        echo -e "${YELLOW}Clear ALL cached sessions?${NC}"
+        echo -e "${COPILOT_YELLOW}Clear ALL cached sessions?${COPILOT_NC}"
         echo "  This will remove $count cached session(s)"
         read -p "Continue? (y/N): " -n 1 -r
         echo
@@ -659,19 +659,19 @@ show_copilot_cache() {
             return 0
         fi
         
-        rm -rf "$CACHE_DIR"/*
-        echo -e "${GREEN}✓${NC} Cleared all caches ($count session(s))"
+        rm -rf "$COPILOT_CACHE_DIR"/*
+        echo -e "${COPILOT_GREEN}✓${COPILOT_NC} Cleared all caches ($count session(s))"
         return 0
     fi
     
     # Default: List cached sessions
-    echo -e "${BOLD}${CYAN}Cached Copilot Sessions${NC}"
+    echo -e "${COPILOT_BOLD}${COPILOT_CYAN}Cached Copilot Sessions${COPILOT_NC}"
     echo ""
     
-    if [[ ! -d "$CACHE_DIR" ]] || [[ -z "$(ls -A "$CACHE_DIR" 2>/dev/null)" ]]; then
+    if [[ ! -d "$COPILOT_CACHE_DIR" ]] || [[ -z "$(ls -A "$COPILOT_CACHE_DIR" 2>/dev/null)" ]]; then
         echo "No cached sessions found"
         echo ""
-        echo -e "${BOLD}Usage:${NC}"
+        echo -e "${COPILOT_BOLD}Usage:${COPILOT_NC}"
         echo "  cppush <name>        Push bookmarked session to cache"
         echo "  cppull <name>        Pull session from cache"
         echo "  cpc --clear <name>   Clear specific cached session"
@@ -682,7 +682,7 @@ show_copilot_cache() {
     local current_host
     current_host=$(get_short_hostname)
     
-    for cache_name in "$CACHE_DIR"/*; do
+    for cache_name in "$COPILOT_CACHE_DIR"/*; do
         [[ -d "$cache_name" ]] || continue
         
         local name
@@ -695,12 +695,12 @@ show_copilot_cache() {
         
         local status=""
         if [[ -n "$session_id" ]] && test_session_exists "$session_id"; then
-            status="${GREEN}[local]${NC}"
+            status="${COPILOT_GREEN}[local]${COPILOT_NC}"
         else
-            status="${GRAY}[remote]${NC}"
+            status="${COPILOT_GRAY}[remote]${COPILOT_NC}"
         fi
         
-        echo -e "  ${BOLD}$name${NC} $status"
+        echo -e "  ${COPILOT_BOLD}$name${COPILOT_NC} $status"
         
         if [[ -f "$metadata_file" ]]; then
             if command -v jq &>/dev/null; then
@@ -711,18 +711,18 @@ show_copilot_cache() {
                 file_count=$(jq -r '.fileCount' "$metadata_file")
                 size_mb=$(awk "BEGIN {printf \"%.2f\", $size_bytes/1048576}")
                 
-                echo -e "     Pushed by: ${YELLOW}$pushed_by${NC} at ${GRAY}$pushed_at${NC}"
+                echo -e "     Pushed by: ${COPILOT_YELLOW}$pushed_by${COPILOT_NC} at ${COPILOT_GRAY}$pushed_at${COPILOT_NC}"
                 echo -e "     Size: ${size_mb} MB ($file_count files)"
             else
-                echo -e "     ${GRAY}(install jq for detailed metadata)${NC}"
+                echo -e "     ${COPILOT_GRAY}(install jq for detailed metadata)${COPILOT_NC}"
             fi
         fi
         
-        [[ -n "$session_id" ]] && echo -e "     ID: ${CYAN}${session_id:0:8}${NC}..."
+        [[ -n "$session_id" ]] && echo -e "     ID: ${COPILOT_CYAN}${session_id:0:8}${COPILOT_NC}..."
         echo ""
     done
     
-    echo -e "${BOLD}Usage:${NC}"
+    echo -e "${COPILOT_BOLD}Usage:${COPILOT_NC}"
     echo "  cppush <name>        Push bookmarked session to cache"
     echo "  cppull <name>        Pull session from cache"
     echo "  cpc --clear <name>   Clear specific cached session"
