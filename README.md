@@ -24,9 +24,15 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
 
 2. Add to your PowerShell profile (`$PROFILE`):
    ```powershell
+   # Set COPILOT_DIR environment variable (customize if needed)
+   # This example uses the default ~/OneDrive/scripts path
+   if (-not $env:COPILOT_DIR) {
+       $env:COPILOT_DIR = "$HOME\OneDrive\scripts"
+   }
+   
    # Load Copilot session management (includes aliases)
-   $bookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
-   $registryPath = "$HOME\OneDrive\scripts\copilot-registry.ps1"
+   $bookmarksPath = "$env:COPILOT_DIR\copilot-bookmarks.ps1"
+   $registryPath = "$env:COPILOT_DIR\copilot-registry.ps1"
    
    if (Test-Path $bookmarksPath) { . $bookmarksPath }
    if (Test-Path $registryPath) { . $registryPath }
@@ -43,13 +49,24 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
    cp bash/copilot-init.bash /mnt/c/Users/$USER/OneDrive/scripts/
    ```
 
-2. Add to your `~/.bashrc`:
+2. Add to your `~/.bashrc` (or custom loader like `~/.bash.d/copilot-session-mgmt.sh`):
    ```bash
-   [[ -f "/mnt/c/Users/$USER/OneDrive/scripts/copilot-init.bash" ]] && \
-       source "/mnt/c/Users/$USER/OneDrive/scripts/copilot-init.bash"
+   # Set COPILOT_DIR environment variable (customize if needed)
+   # Example for different usernames on different machines:
+   hn=$(hostname -s)
+   if [ "$hn" == "machine1" ]; then
+       COPILOT_DIR="/mnt/c/Users/username1/OneDrive/scripts"
+   else
+       COPILOT_DIR="/mnt/c/Users/username2/OneDrive/scripts"
+   fi
+   export COPILOT_DIR
+   
+   # Load Copilot session management
+   [[ -f "${COPILOT_DIR}/copilot-init.bash" ]] && \
+       source "${COPILOT_DIR}/copilot-init.bash"
    ```
 
-   **Note:** The `copilot-init.bash` script automatically loads the bookmarks, registry, and defines all aliases.
+   **Note:** The `copilot-init.bash` script automatically loads the bookmarks, registry, and defines all aliases. If you don't set `COPILOT_DIR`, it will attempt to auto-detect the OneDrive path.
 
 3. Reload your shell:
    ```bash

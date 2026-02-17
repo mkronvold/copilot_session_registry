@@ -50,7 +50,7 @@ function Show-CopilotSessions {
     )
     
     # Reload bookmarks from config file
-    $CopilotBookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
+    $CopilotBookmarksPath = "$env:COPILOT_DIR\copilot-bookmarks.ps1"
     if (Test-Path $CopilotBookmarksPath) {
         . $CopilotBookmarksPath
     }
@@ -175,7 +175,7 @@ function Resume-CopilotSession {
     )
     
     # Reload bookmarks from config file
-    $CopilotBookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
+    $CopilotBookmarksPath = "$env:COPILOT_DIR\copilot-bookmarks.ps1"
     if (Test-Path $CopilotBookmarksPath) {
         . $CopilotBookmarksPath
     }
@@ -261,7 +261,7 @@ function Add-CopilotBookmark {
     $currentHost = Get-ShortHostname
     
     # Reload current bookmarks
-    $CopilotBookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
+    $CopilotBookmarksPath = "$env:COPILOT_DIR\copilot-bookmarks.ps1"
     if (Test-Path $CopilotBookmarksPath) {
         . $CopilotBookmarksPath
     }
@@ -351,7 +351,7 @@ function Remove-CopilotBookmark {
     Write-Host ")"
     
     # Save to file
-    $CopilotBookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
+    $CopilotBookmarksPath = "$env:COPILOT_DIR\copilot-bookmarks.ps1"
     
     if (Test-Path $CopilotBookmarksPath) {
         try {
@@ -423,8 +423,11 @@ function Push-CopilotSession {
         return
     }
     
+    # Derive OneDrive path from COPILOT_DIR
+    $OneDriveDir = Split-Path $env:COPILOT_DIR -Parent
+    
     $sessionPath = "$HOME\.copilot\session-state\$($info.Id)"
-    $cachePath = "$HOME\OneDrive\.copilot-cache\$Name"
+    $cachePath = "$OneDriveDir\.copilot-cache\$Name"
     
     # Check if cache already exists
     if ((Test-Path $cachePath) -and -not $Force) {
@@ -500,12 +503,15 @@ function Get-CopilotSession {
     )
     
     # Reload bookmarks
-    $CopilotBookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
+    $CopilotBookmarksPath = "$env:COPILOT_DIR\copilot-bookmarks.ps1"
     if (Test-Path $CopilotBookmarksPath) {
         . $CopilotBookmarksPath
     }
     
-    $cachePath = "$HOME\OneDrive\.copilot-cache\$Name"
+    # Derive OneDrive path from COPILOT_DIR
+    $OneDriveDir = Split-Path $env:COPILOT_DIR -Parent
+    
+    $cachePath = "$OneDriveDir\.copilot-cache\$Name"
     
     # Check if cache exists
     if (-not (Test-Path $cachePath)) {
@@ -627,7 +633,10 @@ function Show-CopilotCache {
         [switch]$CleanAll
     )
     
-    $cachePath = "$HOME\OneDrive\.copilot-cache"
+    # Derive OneDrive path from COPILOT_DIR
+    $OneDriveDir = Split-Path $env:COPILOT_DIR -Parent
+    
+    $cachePath = "$OneDriveDir\.copilot-cache"
     
     if (-not (Test-Path $cachePath)) {
         Write-Host "`nNo cached sessions found" -ForegroundColor Yellow

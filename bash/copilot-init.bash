@@ -5,18 +5,32 @@
 # Enable alias expansion (needed for non-interactive shells)
 shopt -s expand_aliases
 
+# Use COPILOT_DIR if set, otherwise try to detect
+if [[ -z "$COPILOT_DIR" ]]; then
+    # Try to find OneDrive/scripts directory
+    if [[ -d "/mnt/c/Users/mike/OneDrive/scripts" ]]; then
+        COPILOT_DIR="/mnt/c/Users/mike/OneDrive/scripts"
+    elif [[ -d "/mnt/c/Users/mkronvold/OneDrive/scripts" ]]; then
+        COPILOT_DIR="/mnt/c/Users/mkronvold/OneDrive/scripts"
+    else
+        echo "Error: Cannot find OneDrive/scripts directory" >&2
+        return 1
+    fi
+    export COPILOT_DIR
+fi
+
 # Source bookmark data
-if [[ -f "/mnt/c/Users/mike/OneDrive/scripts/copilot-bookmarks.bash" ]]; then
-    source "/mnt/c/Users/mike/OneDrive/scripts/copilot-bookmarks.bash"
+if [[ -f "${COPILOT_DIR}/copilot-bookmarks.bash" ]]; then
+    source "${COPILOT_DIR}/copilot-bookmarks.bash"
 else
-    echo "Warning: copilot-bookmarks.bash not found" >&2
+    echo "Warning: copilot-bookmarks.bash not found in ${COPILOT_DIR}" >&2
 fi
 
 # Source function registry
-if [[ -f "/mnt/c/Users/mike/OneDrive/scripts/copilot-registry.bash" ]]; then
-    source "/mnt/c/Users/mike/OneDrive/scripts/copilot-registry.bash"
+if [[ -f "${COPILOT_DIR}/copilot-registry.bash" ]]; then
+    source "${COPILOT_DIR}/copilot-registry.bash"
 else
-    echo "Warning: copilot-registry.bash not found" >&2
+    echo "Warning: copilot-registry.bash not found in ${COPILOT_DIR}" >&2
 fi
 
 # Set up aliases

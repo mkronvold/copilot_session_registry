@@ -17,8 +17,23 @@ readonly COPILOT_NC='\033[0m'
 
 # Paths
 readonly COPILOT_SESSION_STATE_DIR="$HOME/.copilot/session-state"
-readonly COPILOT_CACHE_DIR="/mnt/c/Users/mike/OneDrive/.copilot-cache"
-readonly COPILOT_BOOKMARKS_FILE="/mnt/c/Users/mike/OneDrive/scripts/copilot-bookmarks.bash"
+
+# Derive OneDrive path from COPILOT_DIR or detect it
+if [[ -n "$COPILOT_DIR" ]]; then
+    COPILOT_ONEDRIVE_DIR="${COPILOT_DIR%/scripts}"
+else
+    # Fallback detection
+    if [[ -d "/mnt/c/Users/mike/OneDrive" ]]; then
+        COPILOT_ONEDRIVE_DIR="/mnt/c/Users/mike/OneDrive"
+        COPILOT_DIR="${COPILOT_ONEDRIVE_DIR}/scripts"
+    elif [[ -d "/mnt/c/Users/mkronvold/OneDrive" ]]; then
+        COPILOT_ONEDRIVE_DIR="/mnt/c/Users/mkronvold/OneDrive"
+        COPILOT_DIR="${COPILOT_ONEDRIVE_DIR}/scripts"
+    fi
+fi
+
+readonly COPILOT_CACHE_DIR="${COPILOT_ONEDRIVE_DIR}/.copilot-cache"
+readonly COPILOT_BOOKMARKS_FILE="${COPILOT_DIR}/copilot-bookmarks.bash"
 
 # ============================================================================
 # HELPER FUNCTIONS
