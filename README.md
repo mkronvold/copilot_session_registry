@@ -24,21 +24,15 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
 
 2. Add to your PowerShell profile (`$PROFILE`):
    ```powershell
-   # Load Copilot session management
+   # Load Copilot session management (includes aliases)
    $bookmarksPath = "$HOME\OneDrive\scripts\copilot-bookmarks.ps1"
    $registryPath = "$HOME\OneDrive\scripts\copilot-registry.ps1"
    
    if (Test-Path $bookmarksPath) { . $bookmarksPath }
    if (Test-Path $registryPath) { . $registryPath }
-   
-   # Set up aliases
-   Set-Alias cpl Show-CopilotSessions
-   Set-Alias cpr Resume-CopilotSession
-   Set-Alias cpb Add-CopilotBookmark
-   Set-Alias cppush Push-CopilotSession
-   Set-Alias cppull Get-CopilotSession
-   Set-Alias cpc Show-CopilotCache
    ```
+
+   **Note:** Aliases (`cpl`, `cpr`, `cpb`, `cprm`, `cppush`, `cppull`, `cpc`) are automatically defined when you load `copilot-registry.ps1`.
 
 ### Bash/WSL (Linux)
 
@@ -55,6 +49,8 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
        source "/mnt/c/Users/$USER/OneDrive/scripts/copilot-init.bash"
    ```
 
+   **Note:** The `copilot-init.bash` script automatically loads the bookmarks, registry, and defines all aliases.
+
 3. Reload your shell:
    ```bash
    source ~/.bashrc
@@ -64,9 +60,21 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
 
 ### List Sessions
 ```bash
-cpl
+cpl           # Show 10 recent sessions (default)
+cpl 5         # Show 5 recent sessions
+cpl 20        # Show 20 recent sessions
 ```
-Shows bookmarked sessions with location indicators and recent sessions.
+
+Displays sessions in a table format with columns:
+- **ID**: Short session ID (8 chars)
+- **LastUsed**: Last modified date/time
+- **Bookmark**: Bookmark name if assigned
+- **Location**: `[local]` or `[remote:hostname]`
+- **Plan**: ✓ if plan.md exists
+- **Files**: ✓ if files/ directory has content
+- **Description**: First line of plan.md
+
+Also shows bookmarked sessions separately below the table.
 
 ### Resume Session
 ```bash
@@ -79,6 +87,11 @@ cpr <short-id>    # Resume by short ID (min 8 chars)
 cpb <name> <session-id>           # Bookmark and persist
 cpb <name> <session-id> --no-persist  # Temporary bookmark (bash)
 cpb <name> <session-id> -NoPersist    # Temporary bookmark (PowerShell)
+```
+
+### Remove Bookmark
+```bash
+cprm <name>       # Remove bookmark from registry
 ```
 
 ### Transfer Sessions
@@ -111,8 +124,8 @@ cpc -ClearAll           # Clear all caches (PowerShell)
 ```
 ~/OneDrive/scripts/
 ├── copilot-bookmarks.{ps1,bash}    # Bookmark data (synced)
-├── copilot-registry.{ps1,bash}     # Session management functions
-└── copilot-init.bash               # Bash loader (optional)
+├── copilot-registry.{ps1,bash}     # Functions + aliases
+└── copilot-init.bash               # Bash loader script
 
 ~/.copilot/session-state/            # Session storage (local, not synced)
 
@@ -122,6 +135,17 @@ cpc -ClearAll           # Clear all caches (PowerShell)
     ├── session-id.txt
     └── metadata.json
 ```
+
+**PowerShell:**
+- `copilot-bookmarks.ps1` - Bookmark data (hashtable)
+- `copilot-registry.ps1` - Functions and aliases
+- Profile sources both files
+
+**Bash:**
+- `copilot-bookmarks.bash` - Bookmark data (associative arrays)
+- `copilot-registry.bash` - Functions only
+- `copilot-init.bash` - Loader that sources both + defines aliases
+- `.bashrc` sources `copilot-init.bash`
 
 ## Example Workflow
 
@@ -168,25 +192,46 @@ cpr myfeature
 | Location indicators | ✅ | ✅ |
 | Session transfer (push/pull) | ✅ | ✅ |
 | Cache management | ✅ | ✅ |
+| Bookmark removal | ✅ | ✅ |
 | Short ID expansion | ✅ | ✅ |
 | Persistent bookmarks | ✅ | ✅ |
 | Temporary bookmarks | ✅ | ✅ |
 | Automatic backups | ✅ | ✅ |
 | Conflict detection | ✅ | ✅ |
 | Cache clearing | ✅ | ✅ |
+| Table format listing | ✅ | ✅ |
 
 ## File Descriptions
 
 ### PowerShell Files
 
 - **copilot-bookmarks.ps1** - Hashtable storing bookmark data with hostname tracking
-- **copilot-registry.ps1** - 9 functions for session management (5 helpers + 4 commands)
+- **copilot-registry.ps1** - Session management functions (9 functions + 7 aliases)
 
 ### Bash Files
 
 - **copilot-bookmarks.bash** - Parallel associative arrays for bookmark data
-- **copilot-registry.bash** - 9 functions matching PowerShell feature parity
-- **copilot-init.bash** - Standalone loader that sources bookmarks and registry
+- **copilot-registry.bash** - Session management functions (9 functions)
+- **copilot-init.bash** - Standalone loader that sources bookmarks, registry, and defines aliases
+
+## Available Commands
+
+All commands work identically in both PowerShell and Bash:
+
+| Command | Description |
+|---------|-------------|
+| `cpl` | List sessions in table format (optional count: `cpl 5`) |
+| `cpr <name>` | Resume bookmarked session by name |
+| `cpr <shortid>` | Resume session by short ID (8+ chars) |
+| `cpb <name> <id>` | Bookmark a session (default: persistent) |
+| `cprm <name>` | Remove a bookmark from registry |
+| `cppush <name>` | Push bookmarked session to OneDrive cache |
+| `cppull <name>` | Pull session from OneDrive cache |
+| `cpc` | List cached sessions |
+| `cpc --clear <name>` | Clear specific cache (bash) |
+| `cpc -Clear <name>` | Clear specific cache (PowerShell) |
+| `cpc --clear-all` | Clear all caches (bash) |
+| `cpc -ClearAll` | Clear all caches (PowerShell) |
 
 ## License
 
