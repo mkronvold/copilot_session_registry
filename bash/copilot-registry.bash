@@ -109,13 +109,82 @@ validate_session_id() {
 # Show Copilot Sessions (cpl)
 # Lists bookmarked and recent sessions with metadata
 show_copilot_sessions() {
-    echo -e "${COPILOT_BOLD}${COPILOT_CYAN}GitHub Copilot Sessions${COPILOT_NC}"
-    echo ""
+    local count=${1:-10}
     
-    # Show bookmarked sessions
-    if [[ ${#COPILOT_SESSIONS_ID[@]} -gt 0 ]]; then
-        echo -e "${COPILOT_BOLD}Bookmarked Sessions:${COPILOT_NC}"
+    echo ""
+    echo -e "${COPILOT_BOLD}${COPILOT_CYAN}Recent Copilot Sessions:${COPILOT_NC}"
+    echo -e "${COPILOT_CYAN}$(printf '=%.0s' {1..90})${COPILOT_NC}"
+    
+    # Show recent sessions in table format
+    if [[ -d "$COPILOT_SESSION_STATE_DIR" ]]; then
+        # Print table header
+        printf "%-10s %-12s %-15s %-13s %-6s %-7s %s\n" "ID" "LastUsed" "Bookmark" "Location" "Plan" "Files" "Description"
         
+        local session_count=0
+        while IFS= read -r dir; do
+            local session_id
+            session_id=$(basename "$dir")
+            local short_id="${session_id:0:8}"
+            
+            # Get last modified time
+            local last_used
+            last_used=$(stat -c '%y' "$dir" 2>/dev/null | cut -d' ' -f1,2 | cut -d. -f1 | awk '{print substr($1,6,5)" "substr($2,1,5)}')
+            
+            # Check if bookmarked
+            local bookmark_name="-"
+            local location="-"
+            for name in "${!COPILOT_SESSIONS_ID[@]}"; do
+                if [[ "${COPILOT_SESSIONS_ID[$name]}" == "$session_id" ]]; then
+                    bookmark_name="[$name]"
+                    local current_host
+                    current_host=$(get_short_hostname)
+                    if [[ "${COPILOT_SESSIONS_HOST[$name]}" == "$current_host" ]]; then
+                        location="[local]"
+                    else
+                        location="[remote:${COPILOT_SESSIONS_HOST[$name]}]"
+                    fi
+                    break
+                fi
+            done
+            
+            # Check for plan
+            local has_plan="-"
+            local plan_desc=""
+            local plan_file="$dir/plan.md"
+            if [[ -f "$plan_file" ]]; then
+                has_plan="✓"
+                plan_desc=$(head -10 "$plan_file" | grep -m1 '^#' | sed 's/^# *//')
+                # Truncate description to 40 chars
+                if [[ ${#plan_desc} -gt 40 ]]; then
+                    plan_desc="${plan_desc:0:40}"
+                fi
+            fi
+            
+            # Check for files
+            local has_files="-"
+            if [[ -d "$dir/files" ]] && [[ -n "$(ls -A "$dir/files" 2>/dev/null)" ]]; then
+                has_files="✓"
+            fi
+            
+            # Print row
+            printf "%-10s %-12s %-15s %-13s %-6s %-7s %s\n" \
+                "$short_id" \
+                "$last_used" \
+                "$bookmark_name" \
+                "$location" \
+                "$has_plan" \
+                "$has_files" \
+                "$plan_desc"
+            
+            ((session_count++))
+            [[ $session_count -ge $count ]] && break
+        done < <(find "$COPILOT_SESSION_STATE_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -rn | cut -d' ' -f2-)
+    fi
+    
+    # Show bookmarked sessions section
+    echo ""
+    echo -e "${COPILOT_BOLD}${COPILOT_YELLOW}Bookmarked Sessions:${COPILOT_NC}"
+    if [[ ${#COPILOT_SESSIONS_ID[@]} -gt 0 ]]; then
         local current_host
         current_host=$(get_short_hostname)
         
@@ -123,76 +192,33 @@ show_copilot_sessions() {
             local host="${COPILOT_SESSIONS_HOST[$name]}"
             local id="${COPILOT_SESSIONS_ID[$name]}"
             local short_id="${id:0:8}"
-            local location=""
-            local status=""
             
+            # Color code based on location and availability
+            local color="${COPILOT_GRAY}"
+            if [[ "$host" == "$current_host" ]]; then
+                if test_session_exists "$id"; then
+                    color="${COPILOT_GREEN}"
+                else
+                    color="${COPILOT_YELLOW}"
+                fi
+            fi
+            
+            # Get location indicator
+            local location
             if [[ "$host" == "$current_host" ]]; then
                 if test_session_exists "$id"; then
                     location="${COPILOT_GREEN}[local]${COPILOT_NC}"
-                    status="${COPILOT_GREEN}✓${COPILOT_NC}"
                 else
                     location="${COPILOT_YELLOW}[local-missing]${COPILOT_NC}"
-                    status="${COPILOT_RED}✗${COPILOT_NC}"
                 fi
             else
                 location="${COPILOT_GRAY}[remote:$host]${COPILOT_NC}"
-                if test_session_exists "$id"; then
-                    status="${COPILOT_GREEN}✓${COPILOT_NC}"
-                else
-                    status="${COPILOT_GRAY}✗${COPILOT_NC}"
-                fi
             fi
             
-            # Get plan description if available
-            local plan_desc=""
-            if test_session_exists "$id"; then
-                local plan_file="$COPILOT_SESSION_STATE_DIR/$id/plan.md"
-                if [[ -f "$plan_file" ]]; then
-                    plan_desc=$(head -1 "$plan_file" | sed 's/^# *//')
-                fi
-            fi
-            
-            echo -e "  ${status} ${COPILOT_BOLD}${name}${COPILOT_NC} $location"
-            echo -e "     ID: ${COPILOT_CYAN}$short_id${COPILOT_NC}... ($id)"
-            [[ -n "$plan_desc" ]] && echo -e "     ${COPILOT_GRAY}$plan_desc${COPILOT_NC}"
+            echo -e "  ${color}${name}${COPILOT_NC} → $short_id $location"
         done
-        echo ""
-    fi
-    
-    # Show recent sessions
-    if [[ -d "$COPILOT_SESSION_STATE_DIR" ]]; then
-        echo -e "${COPILOT_BOLD}Recent Sessions:${COPILOT_NC}"
-        
-        local count=0
-        while IFS= read -r dir; do
-            local session_id
-            session_id=$(basename "$dir")
-            
-            # Skip if bookmarked
-            local is_bookmarked=false
-            for id in "${COPILOT_SESSIONS_ID[@]}"; do
-                if [[ "$id" == "$session_id" ]]; then
-                    is_bookmarked=true
-                    break
-                fi
-            done
-            
-            if [[ "$is_bookmarked" == "false" ]]; then
-                local short_id="${session_id:0:8}"
-                local plan_desc=""
-                local plan_file="$dir/plan.md"
-                
-                if [[ -f "$plan_file" ]]; then
-                    plan_desc=$(head -1 "$plan_file" | sed 's/^# *//')
-                fi
-                
-                echo -e "  ${COPILOT_BOLD}$short_id${COPILOT_NC}... ($session_id)"
-                [[ -n "$plan_desc" ]] && echo -e "     ${COPILOT_GRAY}$plan_desc${COPILOT_NC}"
-                
-                ((count++))
-                [[ $count -ge 5 ]] && break
-            fi
-        done < <(find "$COPILOT_SESSION_STATE_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -rn | cut -d' ' -f2-)
+    else
+        echo "  (none)"
     fi
     
     echo ""
