@@ -2,6 +2,33 @@
 
 Cross-platform session management for GitHub Copilot CLI with hostname-aware bookmarks and OneDrive cache synchronization.
 
+## Quick Start
+
+### Automated Deployment
+
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:mkronvold/copilot_session_registry.git ~/src/copilot_session_registry
+   ```
+
+2. Run the deployment script:
+   ```bash
+   cd ~/src/copilot_session_registry
+   bash example_deploy.sh
+   ```
+
+   The script will:
+   - Copy all files to `~/OneDrive/scripts/`
+   - Create bash loader in `~/.bash.d/` (if using bash.d system)
+   - Provide instructions for PowerShell profile setup
+   - Reload bash environment if possible
+
+3. Follow the on-screen instructions to complete setup
+
+### Manual Installation
+
+For manual setup or customization, see the detailed installation instructions below.
+
 ## Features
 
 - 📚 **Bookmark Sessions** - Save and name your Copilot sessions
@@ -230,6 +257,15 @@ cpr myfeature
 - **copilot-bookmarks.bash** - Parallel associative arrays for bookmark data
 - **copilot-registry.bash** - Session management functions (9 functions)
 - **copilot-init.bash** - Standalone loader that sources bookmarks, registry, and defines aliases
+- **example_copilot-session-mgmt.sh** - Example bash loader for customization (copy to `~/.bash.d/` or source from `.bashrc`)
+
+### Deployment
+
+- **example_deploy.sh** - Automated deployment script that:
+  - Copies all files to OneDrive/scripts
+  - Creates bash loader in ~/.bash.d/ (if applicable)
+  - Provides PowerShell profile setup instructions
+  - Reloads bash environment
 
 ## Available Commands
 
