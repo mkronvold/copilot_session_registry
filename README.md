@@ -14,7 +14,7 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
 2. Run the deployment script:
    ```bash
    cd ~/src/copilot_session_registry
-   bash example_deploy.sh
+   bash deploy.sh
    ```
 
    The script will:
@@ -261,7 +261,7 @@ cpr myfeature
 
 ### Deployment
 
-- **example_deploy.sh** - Automated deployment script that:
+- **deploy.sh** - Automated deployment script that:
   - Copies all files to OneDrive/scripts
   - Creates bash loader in ~/.bash.d/ (if applicable)
   - Provides PowerShell profile setup instructions
