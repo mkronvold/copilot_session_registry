@@ -14,14 +14,19 @@ Cross-platform session management for GitHub Copilot CLI with hostname-aware boo
 2. Run the deployment script:
    ```bash
    cd ~/src/copilot_session_registry
-   bash deploy.sh
+   bash deploy.sh           # Deploy both Bash and PowerShell components
+   bash deploy.sh --bash    # Deploy only Bash/WSL components
+   bash deploy.sh --pwsh    # Deploy only PowerShell components
    ```
 
-   The script will:
-   - Copy all files to `~/OneDrive/scripts/`
+   The script will (based on selected components):
+   - Source `~/.bash.d/copilot-dir.sh` (if present) to set `$COPILOT_DIR` for Bash deployment
+   - Copy files to the appropriate scripts directory
    - Create bash loader in `~/.bash.d/` (if using bash.d system)
    - Provide instructions for PowerShell profile setup
    - Reload bash environment if possible
+
+   > **Note:** For Bash deployment, create `~/.bash.d/copilot-dir.sh` to set a custom `$COPILOT_DIR`. If absent, the script falls back to `/mnt/c/Users/<winuser>/OneDrive/scripts` (resolved via `whoami.exe`). PowerShell deployment always uses the `whoami.exe`-resolved OneDrive path.
 
 3. Follow the on-screen instructions to complete setup
 
@@ -261,11 +266,20 @@ cpr myfeature
 
 ### Deployment
 
-- **deploy.sh** - Automated deployment script that:
-  - Copies all files to OneDrive/scripts
+- **deploy.sh** - Automated deployment script that accepts `--bash` and/or `--pwsh` flags (default: both):
+  - Sources `~/.bash.d/copilot-dir.sh` (if present) to get `$COPILOT_DIR` for Bash deployment
+  - Copies relevant files to the target scripts directory
   - Creates bash loader in ~/.bash.d/ (if applicable)
   - Provides PowerShell profile setup instructions
   - Reloads bash environment
+
+#### `~/.bash.d/copilot-dir.sh` (optional)
+
+Create this file to override the default Bash deployment destination:
+```bash
+export COPILOT_DIR="/mnt/c/Users/myusername/OneDrive/scripts"
+```
+If absent, `deploy.sh` falls back to resolving the path via `whoami.exe`.
 
 ## Available Commands
 
